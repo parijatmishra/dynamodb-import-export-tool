@@ -1,0 +1,3 @@
+target/
+.idea/
+dynamodb-import-export-tool.iml
