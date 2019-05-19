@@ -11,12 +11,12 @@
         <url>https://github.com/awslabs/dynamodb-import-export-tool.git</url>
     </scm>
     <properties>
-        <aws.java.sdk.version>1.10.10</aws.java.sdk.version>
-        <powermock.version>1.6.2</powermock.version>
+        <aws.java.sdk.version>1.11.555</aws.java.sdk.version>
+        <powermock.version>2.0.2</powermock.version>
         <jcommander.version>1.48</jcommander.version>
         <guava.version>15.0</guava.version>
         <log4j.core.version>1.2.17</log4j.core.version>
-        <easymock.version>3.2</easymock.version>
+        <easymock.version>4.0.2</easymock.version>
         <commons.logging.version>1.2</commons.logging.version>
         <maven.shade.version>2.4.1</maven.shade.version>
         <gpg.skip>true</gpg.skip>
