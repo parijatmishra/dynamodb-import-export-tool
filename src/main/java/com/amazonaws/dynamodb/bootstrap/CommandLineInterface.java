@@ -20,6 +20,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -79,15 +83,8 @@ public class CommandLineInterface {
         final int maxWriteThreads = params.getMaxWriteThreads();
         final boolean consistentScan = params.getConsistentScan();
 
-        final ClientConfiguration sourceConfig = new ClientConfiguration().withMaxConnections(BootstrapConstants.MAX_CONN_SIZE);
-        final ClientConfiguration destinationConfig = new ClientConfiguration().withMaxConnections(BootstrapConstants.MAX_CONN_SIZE);
-
-        final AmazonDynamoDBClient sourceClient = new AmazonDynamoDBClient(
-                new DefaultAWSCredentialsProviderChain(), sourceConfig);
-        final AmazonDynamoDBClient destinationClient = new AmazonDynamoDBClient(
-                new DefaultAWSCredentialsProviderChain(), destinationConfig);
-        sourceClient.setEndpoint(sourceEndpoint);
-        destinationClient.setEndpoint(destinationEndpoint);
+        final AmazonDynamoDB sourceClient = createDynamoDBClient(sourceEndpoint);
+        final AmazonDynamoDB destinationClient = createDynamoDBClient(destinationEndpoint);
 
         TableDescription readTableDescription = sourceClient.describeTable(
                 sourceTable).getTable();
@@ -128,6 +125,34 @@ public class CommandLineInterface {
         } catch (SectionOutOfRangeException e) {
             LOGGER.error("Invalid section parameter", e);
         }
+    }
+
+    /**
+     * Return a AmazonDynamoDB client implementation customized via the given arguments.
+     *
+     * @param endpoint The endpoint to connect to. If null, an endpoint in the default region will be used.
+     *
+     * @return An AmazonDynamoDB client.
+     */
+    private static AmazonDynamoDB createDynamoDBClient(String endpoint) {
+        final ClientConfiguration clientConfig = new ClientConfiguration().withMaxConnections(BootstrapConstants.MAX_CONN_SIZE);
+        final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
+
+        AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
+        builder.setClientConfiguration(clientConfig);
+        builder.setCredentials(credentialsProvider);
+
+        /* If user specified a custom endpoint, configure it */
+        if (endpoint != null) {
+            AwsClientBuilder.EndpointConfiguration endpointConfiguration =
+                    new AwsClientBuilder.EndpointConfiguration(
+                            endpoint, /* The custom endpoint specified on the command line */
+                            "us-west-2" /* By default, use this region -- works for dynamodb local */
+                    );
+            builder.setEndpointConfiguration(endpointConfiguration);
+        }
+
+        return builder.build();
     }
 
     /**
