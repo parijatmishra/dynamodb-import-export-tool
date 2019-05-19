@@ -21,9 +21,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -78,13 +81,15 @@ public class CommandLineInterface {
         final String destinationEndpoint = params.getDestinationEndpoint();
         final String destinationTable = params.getDestinationTable();
         final String sourceTable = params.getSourceTable();
+        final String sourceRole = params.getSourceRole();
+        final String destinationRole = params.getDestinationRole();
         final double readThroughputRatio = params.getReadThroughputRatio();
         final double writeThroughputRatio = params.getWriteThroughputRatio();
         final int maxWriteThreads = params.getMaxWriteThreads();
         final boolean consistentScan = params.getConsistentScan();
 
-        final AmazonDynamoDB sourceClient = createDynamoDBClient(sourceEndpoint);
-        final AmazonDynamoDB destinationClient = createDynamoDBClient(destinationEndpoint);
+        final AmazonDynamoDB sourceClient = createDynamoDBClient(sourceEndpoint, sourceRole);
+        final AmazonDynamoDB destinationClient = createDynamoDBClient(destinationEndpoint, destinationRole);
 
         TableDescription readTableDescription = sourceClient.describeTable(
                 sourceTable).getTable();
@@ -134,13 +139,13 @@ public class CommandLineInterface {
      *
      * @return An AmazonDynamoDB client.
      */
-    private static AmazonDynamoDB createDynamoDBClient(String endpoint) {
+    private static AmazonDynamoDB createDynamoDBClient(String endpoint, String assumeRoleArn) {
         final ClientConfiguration clientConfig = new ClientConfiguration().withMaxConnections(BootstrapConstants.MAX_CONN_SIZE);
         final AWSCredentialsProvider credentialsProvider = new DefaultAWSCredentialsProviderChain();
 
-        AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
-        builder.setClientConfiguration(clientConfig);
-        builder.setCredentials(credentialsProvider);
+        AmazonDynamoDBClientBuilder clientBuilder = AmazonDynamoDBClientBuilder.standard();
+        clientBuilder.setClientConfiguration(clientConfig);
+        clientBuilder.setCredentials(credentialsProvider);
 
         /* If user specified a custom endpoint, configure it */
         if (endpoint != null) {
@@ -149,10 +154,30 @@ public class CommandLineInterface {
                             endpoint, /* The custom endpoint specified on the command line */
                             "us-west-2" /* By default, use this region -- works for dynamodb local */
                     );
-            builder.setEndpointConfiguration(endpointConfiguration);
+            clientBuilder.setEndpointConfiguration(endpointConfiguration);
         }
 
-        return builder.build();
+        /* If user specified an IAM to assume, create the appropriate credentials provider and use it for
+           building the client. */
+        if (assumeRoleArn != null) {
+            /* Create an STS client that uses the default credentials provider */
+            AWSSecurityTokenService stsClient =
+                    AWSSecurityTokenServiceClientBuilder.standard()
+                    .withCredentials(credentialsProvider)
+                    .build();
+            /* Create a AWSCredentialsProvider from the STS client and the given role */
+            STSAssumeRoleSessionCredentialsProvider assumeRoleSessionCredentialsProvider =
+                    new STSAssumeRoleSessionCredentialsProvider.Builder(
+                            assumeRoleArn,
+                            "dynamodb-import-export-tool"
+                    )
+                    .withStsClient(stsClient)
+                    .build();
+            /* Override the default credentials provider */
+            clientBuilder.setCredentials(assumeRoleSessionCredentialsProvider);
+        }
+
+        return clientBuilder.build();
     }
 
     /**

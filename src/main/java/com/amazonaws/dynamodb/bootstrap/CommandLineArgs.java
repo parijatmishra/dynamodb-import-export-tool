@@ -46,6 +46,12 @@ public class CommandLineArgs {
         return sourceTable;
     }
 
+    public static final String SOURCE_ROLE = "--sourceRole";
+    @Parameter(names = SOURCE_ROLE, description = "ARN of the IAM role to assume when accessing source table", required = false)
+    private String sourceRole;
+
+    public String getSourceRole() { return sourceRole; }
+
     public static final String DESTINATION_ENDPOINT = "--destinationEndpoint";
     @Parameter(names = DESTINATION_ENDPOINT, description = "Endpoint of the destination table", required = true)
     private String destinationEndpoint;
@@ -61,6 +67,12 @@ public class CommandLineArgs {
     public String getDestinationTable() {
         return destinationTable;
     }
+
+    public static final String DESTINATION_ROLE = "--destinationRole";
+    @Parameter(names = DESTINATION_ROLE, description = "ARN of the IAM role to assume when accessing destionation table", required = false)
+    private String destinationRole;
+
+    public String getDestinationRole() { return destinationRole; }
 
     public static final String READ_THROUGHPUT_RATIO = "--readThroughputRatio";
     @Parameter(names = READ_THROUGHPUT_RATIO, description = "Percentage of total read throughput to scan the source table", required = true)

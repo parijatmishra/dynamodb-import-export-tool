@@ -22,9 +22,13 @@ java -jar dynamodb-import-export-tool.jar
 
 --destinationTable <destination_table> // the destination table to write to.
 
+--destinationRole <ARN> // (Optional) ARN of an IAM role to assume in order to write to the destination table
+
 --sourceEndpoint <source_endpoint> // the endpoint where the source table is located.
 
 --sourceTable <source_table>// the source table to read from.
+
+--sourceRole <ARN> // (Optional) ARN of an IAM role to assume to rad from the source table
 
 --readThroughputRatio <ratio_in_decimal> // the ratio of read throughput to consume from the source table.
 
