@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 import com.amazonaws.dynamodb.bootstrap.constants.BootstrapConstants;
 import com.amazonaws.dynamodb.bootstrap.exception.NullReadCapacityException;
 import com.amazonaws.dynamodb.bootstrap.exception.SectionOutOfRangeException;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputDescription;
 import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
@@ -32,7 +32,7 @@ import com.amazonaws.services.dynamodbv2.model.TableDescription;
  * consumer to accept the results.
  */
 public class DynamoDBBootstrapWorker extends AbstractLogProvider {
-    private final AmazonDynamoDBClient client;
+    private final AmazonDynamoDB client;
     private final double rateLimit;
     private final String tableName;
     private final int numSegments;
@@ -46,7 +46,7 @@ public class DynamoDBBootstrapWorker extends AbstractLogProvider {
      * 
      * @throws Exception
      */
-    public DynamoDBBootstrapWorker(AmazonDynamoDBClient client,
+    public DynamoDBBootstrapWorker(AmazonDynamoDB client,
             double rateLimit, String tableName, ExecutorService exec,
             int section, int totalSections, int numSegments,
             boolean consistentScan) throws SectionOutOfRangeException {
@@ -74,7 +74,7 @@ public class DynamoDBBootstrapWorker extends AbstractLogProvider {
      * 
      * @throws Exception
      */
-    public DynamoDBBootstrapWorker(AmazonDynamoDBClient client,
+    public DynamoDBBootstrapWorker(AmazonDynamoDB client,
             double rateLimit, String tableName, int numThreads)
             throws NullReadCapacityException {
         this.client = client;
